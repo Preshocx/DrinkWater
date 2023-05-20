@@ -1,0 +1,76 @@
+import streamlit as st
+import datetime
+import webbrowser
+import smtplib
+import tweepy
+
+def calculate_water_intake(weight):
+    # Assuming water intake formula: 30 ml per kg of body weight
+    water_intake = weight * 30
+    return water_intake
+
+def send_email_reminder(email, water_intake):
+    subject = "Water Reminder"
+    body = f"Drink {water_intake} ml of water today!"
+    message = f"Subject: {subject}\n\n{body}"
+
+    # TODO: Replace the placeholders with your SMTP server details
+    smtp_server = "smtp.example.com"
+    smtp_port = 587
+    smtp_username = "your_username"
+    smtp_password = "your_password"
+
+    try:
+        with smtplib.SMTP(smtp_server, smtp_port) as server:
+            server.starttls()
+            server.login(smtp_username, smtp_password)
+            server.sendmail("admin@agiphi.com", email, message)
+        st.write(f"Email reminder sent to {email}! Drink {water_intake} ml of water.")
+    except Exception as e:
+        st.error(f"Error occurred while sending email: {str(e)}")
+
+def share_on_twitter(water_intake):
+    consumer_key = "your_consumer_key"
+    consumer_secret = "your_consumer_secret"
+    access_token = "your_access_token"
+    access_token_secret = "your_access_token_secret"
+
+    auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
+    auth.set_access_token(access_token, access_token_secret)
+    api = tweepy.API(auth)
+
+    tweet = f"My daily water intake should be approximately {water_intake} ml. #WaterReminder"
+    try:
+        api.update_status(tweet)
+        st.write("Tweet posted successfully!")
+    except tweepy.TweepError as e:
+        st.error(f"Error occurred while posting tweet: {str(e)}")
+
+def main():
+    st.title("Water Reminder")
+    st.write("Welcome to the Water Reminder App!")
+    st.write("Enter your weight below to calculate your daily water intake:")
+
+    weight = st.number_input("Weight (in kg)")
+    water_intake = calculate_water_intake(weight)
+
+    st.write(f"Your daily water intake should be approximately {water_intake} ml.")
+
+    st.write("## Visualize Your Water Intake Progress")
+    progress = st.progress(0)
+    consumed = st.number_input("Enter the amount of water consumed (in ml)", value=0)
+    if consumed > water_intake:
+        st.warning("You have exceeded your daily water intake!")
+    progress.progress(consumed / water_intake)
+
+    st.write("## Set Email Reminder")
+    email = st.text_input("Enter your email address")
+    if st.button("Set Reminder") and email:
+        send_email_reminder(email, water_intake)
+
+    st.write("## Share on Twitter")
+    if st.button("Share"):
+        share_on_twitter(water_intake)
+
+if __name__ == '__main__':
+    main()
